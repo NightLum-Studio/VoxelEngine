@@ -75,11 +75,6 @@ See `docs/scripts/` for per‑file notes.
 - Editor preview shows color tiles: extraction fallback when array isn’t readable; verify Texture2DArray asset
 - Performance: enable `BuildDiagnostic`, reduce `viewDistanceChunks`/`maxGeneratePerFrame`
 
-## Contributing
-
-- Keep public APIs stable; prefer additive changes, optimize vibe coded slop
-- Document new scripts in `docs/scripts/` and link them from `docs/overview.md`
-
 ## License
 
 See LICENSE.

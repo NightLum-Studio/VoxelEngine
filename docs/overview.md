@@ -18,7 +18,7 @@ Start here for a high-level map of Luxelith’s voxel engine and links to per-sc
   - BuildDiagnostic runtime overlay for performance/support checks
   - PlayerFlyController free-fly controller for testing
 
-Per-script reference stubs
+Per-script reference information
 - scripts/world-streamer.md
 - scripts/gpu-mesher.md
 - scripts/chunk.md
@@ -35,4 +35,4 @@ Per-script reference stubs
 - scripts/block-editor.md
 - scripts/texture-array-shader-gui.md
 
-Back to README: ../README.md
+Back to README: [README.md]../README.md
