@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 65ef50ffb4929c344bc74c405a01c17a
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - voxelMesher: {instanceID: 0}
+  - voxelMaterial: {instanceID: 0}
+  - blockRegistry: {fileID: 11400000, guid: 22cd9fbfa4907a14db10a85c4ca1eb4e, type: 2}
+  - player: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

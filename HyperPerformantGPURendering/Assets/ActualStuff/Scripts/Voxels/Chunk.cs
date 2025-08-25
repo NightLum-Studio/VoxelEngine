@@ -1,0 +1,47 @@
+using System;
+using Unity.Collections;
+using UnityEngine;
+using UnityEngine.Rendering;
+using Unity.Jobs;
+using Unity.Mathematics;
+
+namespace HyperVoxel
+{
+    public class Chunk : IDisposable
+    {
+        public int3 coord;
+        public ChunkState state;
+
+        public NativeArray<byte> voxels; // length = VoxelsPerChunk
+
+        public Mesh mesh;
+        public MeshCollider collider; // optional later
+
+        public AsyncGPUReadbackRequest countersReq;
+        public AsyncGPUReadbackRequest vReq;
+        public AsyncGPUReadbackRequest iReq;
+
+        public JobHandle genHandle;
+        public bool hasJob;
+        public bool pendingRemoval;
+
+        public Chunk(int3 coord)
+        {
+            this.coord = coord;
+            state = ChunkState.Requested;
+            voxels = new NativeArray<byte>(ChunkDefs.VoxelsPerChunk, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            mesh = new Mesh
+            {
+                indexFormat = UnityEngine.Rendering.IndexFormat.UInt32
+            };
+        }
+
+        public void Dispose()
+        {
+            if (voxels.IsCreated) voxels.Dispose();
+            if (mesh != null) UnityEngine.Object.Destroy(mesh);
+        }
+    }
+}
+
+
