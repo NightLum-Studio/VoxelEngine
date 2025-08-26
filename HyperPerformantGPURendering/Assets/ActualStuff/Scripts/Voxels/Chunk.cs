@@ -31,6 +31,8 @@ namespace HyperVoxel
     public int gpuRetryCount;        // retry attempts for counters/mesh data
     public int pendingVertexCount;   // last requested vertex count for readback
     public int pendingIndexCount;    // last requested index count for readback
+    public int gpuStage;             // 0..6 greedy passes completed
+    public bool meshDataRequested;   // whether vertex/index readback has been requested
 
         public Chunk(int3 coord)
         {
