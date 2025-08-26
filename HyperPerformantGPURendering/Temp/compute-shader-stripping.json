@@ -1,0 +1,82 @@
+{
+    "totalVariantsIn": 8,
+    "totalVariantsOut": 8,
+    "shaders": [
+        {
+            "inputVariants": 1,
+            "outputVariants": 1,
+            "name": "ProbeVolumeSamplingDebugPositionNormal",
+            "pipelines": [
+                {
+                    "inputVariants": 1,
+                    "outputVariants": 1,
+                    "pipeline": "",
+                    "variants": [
+                        {
+                            "inputVariants": 1,
+                            "outputVariants": 1,
+                            "variantName": "Kernel: ComputePositionNormal",
+                            "stripTimeMs": 0.0026000000000000005
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "inputVariants": 7,
+            "outputVariants": 7,
+            "name": "VoxelMesher",
+            "pipelines": [
+                {
+                    "inputVariants": 7,
+                    "outputVariants": 7,
+                    "pipeline": "",
+                    "variants": [
+                        {
+                            "inputVariants": 1,
+                            "outputVariants": 1,
+                            "variantName": "Kernel: CSBuildFaces",
+                            "stripTimeMs": 0.0004
+                        },
+                        {
+                            "inputVariants": 1,
+                            "outputVariants": 1,
+                            "variantName": "Kernel: CSGreedyPosY",
+                            "stripTimeMs": 0.0002
+                        },
+                        {
+                            "inputVariants": 1,
+                            "outputVariants": 1,
+                            "variantName": "Kernel: CSGreedyNegY",
+                            "stripTimeMs": 0.0001
+                        },
+                        {
+                            "inputVariants": 1,
+                            "outputVariants": 1,
+                            "variantName": "Kernel: CSGreedyPosX",
+                            "stripTimeMs": 0.0001
+                        },
+                        {
+                            "inputVariants": 1,
+                            "outputVariants": 1,
+                            "variantName": "Kernel: CSGreedyNegX",
+                            "stripTimeMs": 0.0001
+                        },
+                        {
+                            "inputVariants": 1,
+                            "outputVariants": 1,
+                            "variantName": "Kernel: CSGreedyPosZ",
+                            "stripTimeMs": 0.0001
+                        },
+                        {
+                            "inputVariants": 1,
+                            "outputVariants": 1,
+                            "variantName": "Kernel: CSGreedyNegZ",
+                            "stripTimeMs": 0.0001
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

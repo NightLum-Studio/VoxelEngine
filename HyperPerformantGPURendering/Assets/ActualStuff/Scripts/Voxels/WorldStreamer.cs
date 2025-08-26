@@ -256,7 +256,14 @@ namespace HyperVoxel
                 }
                 else
                 {
-                    // Also remove from ready queue if present
+                    // If generating on CPU, ensure job completes before disposing
+                    if (c.hasJob)
+                    {
+                        try { c.genHandle.Complete(); }
+                        catch { /* swallow to ensure cleanup proceeds */ }
+                        c.hasJob = false;
+                    }
+                    // Remove from ready queue if present (any state)
                     for (int i = _readyQueue.Count - 1; i >= 0; i--)
                     {
                         if (_readyQueue[i] == c) _readyQueue.RemoveAt(i);
@@ -280,6 +287,9 @@ namespace HyperVoxel
             chunk.hasJob = true;
         }
 
+    private const float GpuReadbackTimeout = 2.5f; // seconds before considering a GPU readback stuck
+    private const int MaxGpuRetries = 2;            // how many times we retry a stuck/failed readback
+
     private void ProcessMeshing()
         {
             // If there's an active chunk using the shared GPU mesher, drive it to completion first
@@ -288,6 +298,31 @@ namespace HyperVoxel
                 var chunk = _activeGpuChunk;
                 if (chunk.state == ChunkState.MeshingGPU)
                 {
+                    // Timeout or failure handling
+                    if (chunk.countersReq.hasError || (!chunk.countersReq.done && (Time.realtimeSinceStartup - chunk.gpuStartTime) > GpuReadbackTimeout))
+                    {
+                        if (chunk.gpuRetryCount < MaxGpuRetries)
+                        {
+                            // Retry counters request
+                            chunk.gpuRetryCount++;
+                            _gpuMesher.RequestCounters(out chunk.countersReq);
+                            chunk.gpuStartTime = Time.realtimeSinceStartup;
+                        }
+                        else
+                        {
+                            // Give up and mark empty mesh to keep pipeline flowing
+                            ApplyMesh(chunk, System.Array.Empty<GpuMesher.PackedVertex>(), System.Array.Empty<uint>());
+                            chunk.state = ChunkState.Active;
+                            _activeGpuChunk = null;
+                            if (chunk.pendingRemoval)
+                            {
+                                long key = Key(chunk.coord);
+                                if (_chunks.ContainsKey(key)) _chunks.Remove(key);
+                                chunk.Dispose();
+                            }
+                        }
+                        return;
+                    }
                     if (chunk.countersReq.done && !chunk.countersReq.hasError)
                     {
                         var counts = chunk.countersReq.GetData<uint>();
@@ -311,6 +346,9 @@ namespace HyperVoxel
                         else
                         {
                             _gpuMesher.RequestMeshData(vCount, iCount, out chunk.vReq, out chunk.iReq);
+                            chunk.pendingVertexCount = vCount;
+                            chunk.pendingIndexCount = iCount;
+                            chunk.uploadStartTime = Time.realtimeSinceStartup;
                             chunk.state = ChunkState.Uploading;
                         }
                     }
@@ -318,6 +356,33 @@ namespace HyperVoxel
                 }
                 if (chunk.state == ChunkState.Uploading)
                 {
+                    // Error or timeout handling for vertex/index readbacks
+                    bool timedOut = (!chunk.vReq.done || !chunk.iReq.done) && (Time.realtimeSinceStartup - chunk.uploadStartTime) > GpuReadbackTimeout;
+                    bool hasError = chunk.vReq.hasError || chunk.iReq.hasError;
+                    if (hasError || timedOut)
+                    {
+                        if (chunk.gpuRetryCount < MaxGpuRetries)
+                        {
+                            chunk.gpuRetryCount++;
+                            // Retry just the mesh data readback without rebuilding
+                            _gpuMesher.RequestMeshData(chunk.pendingVertexCount, chunk.pendingIndexCount, out chunk.vReq, out chunk.iReq);
+                            chunk.uploadStartTime = Time.realtimeSinceStartup;
+                        }
+                        else
+                        {
+                            // Fallback to mark as empty mesh to avoid stalls
+                            ApplyMesh(chunk, System.Array.Empty<GpuMesher.PackedVertex>(), System.Array.Empty<uint>());
+                            chunk.state = ChunkState.Active;
+                            _activeGpuChunk = null;
+                            if (chunk.pendingRemoval)
+                            {
+                                long key = Key(chunk.coord);
+                                if (_chunks.ContainsKey(key)) _chunks.Remove(key);
+                                chunk.Dispose();
+                            }
+                        }
+                        return;
+                    }
                     if (chunk.vReq.done && chunk.iReq.done && !chunk.vReq.hasError && !chunk.iReq.hasError)
                     {
                         if (chunk.mesh == null)
@@ -360,6 +425,26 @@ namespace HyperVoxel
                 }
             }
 
+            // Optional: detect and log if nothing is progressing for a while (Editor only)
+#if UNITY_EDITOR
+            if (_activeGpuChunk == null && _readyQueue.Count == 0)
+            {
+                // Check if we have any generating chunks that might be stuck for a long time
+                // Unity jobs rarely hang, but this helps visibility during debugging
+                // We don't cancel jobs here; we only warn.
+                int generating = 0;
+                foreach (var kv in _chunks)
+                {
+                    if (kv.Value.state == ChunkState.Generating) generating++;
+                }
+                if (generating > 0)
+                {
+                    // This log is throttled implicitly by Editor console collapsing
+                    // Debug.Log("WorldStreamer: Waiting for CPU generation jobs... (" + generating + ")");
+                }
+            }
+#endif
+
             // No active job; pick the best next chunk (nearest in spiral order) to mesh
             if (_readyQueue.Count > 0)
             {
@@ -389,6 +474,9 @@ namespace HyperVoxel
                     if (sun != null) sunDir = -sun.transform.forward;
                     _gpuMesher.BuildMesh(chunk.coord, new Unity.Mathematics.float3(sunDir.x, sunDir.y, sunDir.z), 0, 0.75f);
                     _gpuMesher.RequestCounters(out chunk.countersReq);
+                    chunk.gpuStartTime = Time.realtimeSinceStartup;
+                    chunk.uploadStartTime = 0f;
+                    chunk.gpuRetryCount = 0;
                     chunk.state = ChunkState.MeshingGPU;
                     _activeGpuChunk = chunk;
                 }
@@ -555,6 +643,28 @@ namespace HyperVoxel
                 }
             }
         }
+
+        // --- Diagnostics API ---
+        public void GetChunkStateCounts(out int requested, out int generating, out int ready, out int meshing, out int uploading, out int active)
+        {
+            requested = generating = ready = meshing = uploading = active = 0;
+            foreach (var kv in _chunks)
+            {
+                switch (kv.Value.state)
+                {
+                    case ChunkState.Requested: requested++; break;
+                    case ChunkState.Generating: generating++; break;
+                    case ChunkState.ReadyForMesh: ready++; break;
+                    case ChunkState.MeshingGPU: meshing++; break;
+                    case ChunkState.Uploading: uploading++; break;
+                    case ChunkState.Active: active++; break;
+                }
+            }
+        }
+
+        public int GetReadyQueueLength() => _readyQueue.Count;
+        public bool HasActiveGpuChunk => _activeGpuChunk != null;
+        public int3 GetCurrentCenter() => _currentCenter;
     }
 }
 

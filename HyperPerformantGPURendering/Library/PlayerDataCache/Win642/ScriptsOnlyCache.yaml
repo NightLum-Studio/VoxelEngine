@@ -11,6 +11,8 @@ ScriptsOnlyBuild:
     - UnityEngine.InputSystem.InputSettings
     - UnityEngine.InputSystem.InputSystemObject
     - UnityEngine.InputSystem.RemoteInputPlayerConnection
+    Unity.RenderPipelines.Core.Editor.dll:
+    - UnityEditor.Rendering.VolumeProfileEditor
     Unity.RenderPipelines.Core.Runtime:
     - UnityEngine.Rendering.UI.DebugUIHandlerBitField
     - UnityEngine.Rendering.UI.DebugUIHandlerButton
@@ -78,8 +80,6 @@ ScriptsOnlyBuild:
     - UnityEngine.Rendering.Universal.WhiteBalance
     Unity.Rider.Editor.dll:
     - Packages.Rider.Editor.UnitTesting.CallbackData
-    Unity.ShaderGraph.Editor.dll:
-    - UnityEditor.ShaderGraph.ShaderGraphProjectSettings
     UnityEditor.Graphs.dll:
     - UnityEditor.Graphs.AnimationBlendTree.Graph
     - UnityEditor.Graphs.AnimationBlendTree.GraphGUI
@@ -203,24 +203,6 @@ ScriptsOnlyBuild:
     fullTypeName: UnityEngine.Rendering.UI.DebugUIHandlerButton
     methodName: OnAction
   - assembly: Unity.RenderPipelines.Core.Runtime
-    fullTypeName: UnityEngine.Rendering.UI.DebugUIHandlerUIntField
-    methodName: OnDecrement
-  - assembly: Unity.RenderPipelines.Core.Runtime
-    fullTypeName: UnityEngine.Rendering.UI.DebugUIHandlerUIntField
-    methodName: OnIncrement
-  - assembly: Unity.RenderPipelines.Core.Runtime
-    fullTypeName: UnityEngine.Rendering.UI.DebugUIHandlerUIntField
-    methodName: OnIncrement
-  - assembly: Unity.RenderPipelines.Core.Runtime
-    fullTypeName: UnityEngine.Rendering.UI.DebugUIHandlerUIntField
-    methodName: OnDecrement
-  - assembly: Unity.RenderPipelines.Core.Runtime
-    fullTypeName: UnityEngine.Rendering.UI.DebugUIHandlerObjectPopupField
-    methodName: OnDecrement
-  - assembly: Unity.RenderPipelines.Core.Runtime
-    fullTypeName: UnityEngine.Rendering.UI.DebugUIHandlerObjectPopupField
-    methodName: OnIncrement
-  - assembly: Unity.RenderPipelines.Core.Runtime
     fullTypeName: UnityEngine.Rendering.UI.DebugUIHandlerPanel
     methodName: OnScrollbarClicked
   - assembly: Unity.RenderPipelines.Core.Runtime
@@ -237,6 +219,24 @@ ScriptsOnlyBuild:
     methodName: OnDecrement
   - assembly: Unity.RenderPipelines.Core.Runtime
     fullTypeName: UnityEngine.Rendering.UI.DebugUIHandlerIntField
+    methodName: OnIncrement
+  - assembly: Unity.RenderPipelines.Core.Runtime
+    fullTypeName: UnityEngine.Rendering.UI.DebugUIHandlerUIntField
+    methodName: OnDecrement
+  - assembly: Unity.RenderPipelines.Core.Runtime
+    fullTypeName: UnityEngine.Rendering.UI.DebugUIHandlerUIntField
+    methodName: OnIncrement
+  - assembly: Unity.RenderPipelines.Core.Runtime
+    fullTypeName: UnityEngine.Rendering.UI.DebugUIHandlerUIntField
+    methodName: OnIncrement
+  - assembly: Unity.RenderPipelines.Core.Runtime
+    fullTypeName: UnityEngine.Rendering.UI.DebugUIHandlerUIntField
+    methodName: OnDecrement
+  - assembly: Unity.RenderPipelines.Core.Runtime
+    fullTypeName: UnityEngine.Rendering.UI.DebugUIHandlerObjectPopupField
+    methodName: OnDecrement
+  - assembly: Unity.RenderPipelines.Core.Runtime
+    fullTypeName: UnityEngine.Rendering.UI.DebugUIHandlerObjectPopupField
     methodName: OnIncrement
   - assembly: Unity.RenderPipelines.Core.Runtime
     fullTypeName: UnityEngine.Rendering.UI.DebugUIHandlerPanel
@@ -266,123 +266,123 @@ ScriptsOnlyBuild:
     - Class: 108
       Script: {instanceID: 0}
     - Class: 114
-      Script: {instanceID: 18010}
+      Script: {instanceID: 18022}
     - Class: 114
-      Script: {instanceID: 30288}
+      Script: {instanceID: 30156}
     - Class: 114
-      Script: {instanceID: 30528}
+      Script: {instanceID: 30294}
     - Class: 114
-      Script: {instanceID: 30898}
+      Script: {instanceID: 30534}
     - Class: 114
-      Script: {instanceID: 30958}
+      Script: {instanceID: 30904}
     - Class: 114
-      Script: {instanceID: 31014}
+      Script: {instanceID: 30964}
     - Class: 114
-      Script: {instanceID: 31116}
+      Script: {instanceID: 31020}
     - Class: 114
-      Script: {instanceID: 31206}
+      Script: {instanceID: 31122}
     - Class: 114
-      Script: {instanceID: 31340}
+      Script: {instanceID: 31212}
     - Class: 114
-      Script: {instanceID: 31590}
+      Script: {instanceID: 31346}
     - Class: 114
-      Script: {instanceID: 32134}
+      Script: {instanceID: 31596}
     - Class: 114
-      Script: {instanceID: 32190}
+      Script: {instanceID: 31894}
     - Class: 114
-      Script: {instanceID: 32252}
+      Script: {instanceID: 32142}
     - Class: 114
-      Script: {instanceID: 32340}
+      Script: {instanceID: 32198}
     - Class: 114
-      Script: {instanceID: 32558}
+      Script: {instanceID: 32260}
     - Class: 114
-      Script: {instanceID: 32644}
+      Script: {instanceID: 32348}
     - Class: 114
-      Script: {instanceID: 32680}
+      Script: {instanceID: 32566}
     - Class: 114
-      Script: {instanceID: 32734}
+      Script: {instanceID: 32652}
     - Class: 114
-      Script: {instanceID: 32766}
+      Script: {instanceID: 32688}
     - Class: 114
-      Script: {instanceID: 32798}
+      Script: {instanceID: 32742}
     - Class: 114
-      Script: {instanceID: 33628}
+      Script: {instanceID: 32774}
     - Class: 114
-      Script: {instanceID: 33808}
+      Script: {instanceID: 32806}
     - Class: 114
-      Script: {instanceID: 33936}
+      Script: {instanceID: 33636}
     - Class: 114
-      Script: {instanceID: 34354}
+      Script: {instanceID: 33816}
     - Class: 114
-      Script: {instanceID: 34560}
+      Script: {instanceID: 33944}
     - Class: 114
-      Script: {instanceID: 34616}
+      Script: {instanceID: 34566}
     - Class: 114
-      Script: {instanceID: 34654}
+      Script: {instanceID: 34622}
     - Class: 114
-      Script: {instanceID: 34918}
+      Script: {instanceID: 34660}
     - Class: 114
-      Script: {instanceID: 35036}
+      Script: {instanceID: 34922}
     - Class: 114
-      Script: {instanceID: 35066}
+      Script: {instanceID: 35040}
     - Class: 114
-      Script: {instanceID: 35140}
+      Script: {instanceID: 35070}
     - Class: 114
-      Script: {instanceID: 35218}
+      Script: {instanceID: 35144}
     - Class: 114
-      Script: {instanceID: 35326}
+      Script: {instanceID: 35222}
     - Class: 114
-      Script: {instanceID: 35902}
+      Script: {instanceID: 35330}
     - Class: 114
-      Script: {instanceID: 36080}
+      Script: {instanceID: 35906}
     - Class: 114
-      Script: {instanceID: 36174}
+      Script: {instanceID: 36084}
     - Class: 114
-      Script: {instanceID: 36176}
+      Script: {instanceID: 36178}
     - Class: 114
-      Script: {instanceID: 36418}
+      Script: {instanceID: 36180}
     - Class: 114
-      Script: {instanceID: 37120}
+      Script: {instanceID: 36422}
     - Class: 114
-      Script: {instanceID: 37538}
+      Script: {instanceID: 37126}
     - Class: 114
-      Script: {instanceID: 37656}
+      Script: {instanceID: 37544}
     - Class: 114
-      Script: {instanceID: 37678}
+      Script: {instanceID: 37662}
     - Class: 114
-      Script: {instanceID: 38414}
+      Script: {instanceID: 37684}
     - Class: 114
-      Script: {instanceID: 38628}
+      Script: {instanceID: 38420}
     - Class: 114
-      Script: {instanceID: 39030}
+      Script: {instanceID: 38634}
     - Class: 114
-      Script: {instanceID: 39082}
+      Script: {instanceID: 39036}
     - Class: 114
-      Script: {instanceID: 39352}
+      Script: {instanceID: 39088}
     - Class: 114
-      Script: {instanceID: 39424}
+      Script: {instanceID: 39358}
     - Class: 114
-      Script: {instanceID: 39514}
+      Script: {instanceID: 39430}
     - Class: 114
-      Script: {instanceID: 40032}
+      Script: {instanceID: 39520}
     - Class: 114
-      Script: {instanceID: 40132}
+      Script: {instanceID: 40038}
     - Class: 114
-      Script: {instanceID: 40264}
+      Script: {instanceID: 40138}
     - Class: 114
-      Script: {instanceID: 40348}
+      Script: {instanceID: 40270}
     - Class: 114
-      Script: {instanceID: 40378}
+      Script: {instanceID: 40354}
     - Class: 114
-      Script: {instanceID: 40526}
+      Script: {instanceID: 40384}
     - Class: 114
-      Script: {instanceID: 40760}
+      Script: {instanceID: 40532}
     - Class: 114
-      Script: {instanceID: 41054}
+      Script: {instanceID: 40766}
     - Class: 114
-      Script: {instanceID: 41216}
+      Script: {instanceID: 41060}
     - Class: 114
-      Script: {instanceID: 55366}
+      Script: {instanceID: 41222}
     - Class: 115
       Script: {instanceID: 0}
     - Class: 128
@@ -404,22 +404,16 @@ ScriptsOnlyBuild:
   scriptHashData:
   - hash:
       serializedVersion: 2
-      Hash: f2a763f59d32c1c2797802e58f3b1abf
-    assemblyName: Assembly-CSharp
-    namespaceName: HyperVoxel
-    className: VoxelEngineSetupValidator
-  - hash:
-      serializedVersion: 2
-      Hash: 5fff3d065c086fba94f3cb50f6730b20
-    assemblyName: Assembly-CSharp
-    namespaceName: HyperVoxel
-    className: BlockDatabaseIntegration
-  - hash:
-      serializedVersion: 2
       Hash: f9a8895200533849355f694993c06657
     assemblyName: Unity.RenderPipelines.Universal.Runtime
     namespaceName: UnityEngine.Rendering.Universal
     className: UniversalRenderPipelineAsset
+  - hash:
+      serializedVersion: 2
+      Hash: 7060b54a6632b0aa80b6d76f9d48bb9f
+    assemblyName: Assembly-CSharp
+    namespaceName: HyperVoxel
+    className: BuildDiagnostic
   - hash:
       serializedVersion: 2
       Hash: 95c8a8c68e664d4868755f06e7c55997
@@ -438,6 +432,12 @@ ScriptsOnlyBuild:
     assemblyName: Unity.TextMeshPro
     namespaceName: TMPro
     className: TextMeshProUGUI
+  - hash:
+      serializedVersion: 2
+      Hash: a676c71744fbcc3823fe65cd4ff0f9d5
+    assemblyName: Assembly-CSharp
+    namespaceName: HyperVoxel
+    className: BlockDefinitionDatabase
   - hash:
       serializedVersion: 2
       Hash: 2c583ad0ac85d03e8700dd05fdcb46cb
@@ -708,6 +708,12 @@ ScriptsOnlyBuild:
     assemblyName: Unity.InputSystem
     namespaceName: UnityEngine.InputSystem.UI
     className: TrackedDeviceRaycaster
+  - hash:
+      serializedVersion: 2
+      Hash: 5fff3d065c086fba94f3cb50f6730b20
+    assemblyName: Assembly-CSharp
+    namespaceName: HyperVoxel
+    className: BlockDatabaseIntegration
   - hash:
       serializedVersion: 2
       Hash: 33656f83bb0079184b2206a69690ec46
@@ -1004,7 +1010,7 @@ ScriptsOnlyBuild:
     className: SceneRenderPipeline
   - hash:
       serializedVersion: 2
-      Hash: 72d6ceb420d63476e1544976524daed5
+      Hash: 4bc370b73c2360debc18f7f8d73fb935
     assemblyName: Assembly-CSharp
     namespaceName: HyperVoxel
     className: WorldStreamer
@@ -1070,12 +1076,6 @@ ScriptsOnlyBuild:
     className: InputActionAssetEditor
   - hash:
       serializedVersion: 2
-      Hash: 7060b54a6632b0aa80b6d76f9d48bb9f
-    assemblyName: Assembly-CSharp
-    namespaceName: HyperVoxel
-    className: BuildDiagnostic
-  - hash:
-      serializedVersion: 2
       Hash: 113e54f67456d0e7754c0598ee2a6dd4
     assemblyName: Unity.RenderPipelines.Core.Runtime
     namespaceName: UnityEngine.Rendering
@@ -1134,12 +1134,6 @@ ScriptsOnlyBuild:
     assemblyName: UnityEngine.UI
     namespaceName: UnityEngine.EventSystems
     className: TouchInputModule
-  - hash:
-      serializedVersion: 2
-      Hash: b2a87b618bf66bc01099da0446a7165b
-    assemblyName: Assembly-CSharp
-    namespaceName: HyperVoxel
-    className: Bootstrapper
   - hash:
       serializedVersion: 2
       Hash: 8d7ab1303b1c14da5fdd62bf96ca6e89
@@ -1956,13 +1950,7 @@ ScriptsOnlyBuild:
     assemblyName: Unity.Timeline
     namespaceName: UnityEngine.Timeline
     className: PlayableTrack
-  - hash:
-      serializedVersion: 2
-      Hash: a676c71744fbcc3823fe65cd4ff0f9d5
-    assemblyName: Assembly-CSharp
-    namespaceName: HyperVoxel
-    className: BlockDefinitionDatabase
   platform: 19
   scenePathNames:
   - Assets/Scenes/SampleScene.unity
-  playerPath: D:/Unity/Testbuild/HyperPerformantGPURendering.exe
+  playerPath: D:/Unity/Testbuild/LuxelithVoxelEngine/HyperPerformantGPURendering.exe

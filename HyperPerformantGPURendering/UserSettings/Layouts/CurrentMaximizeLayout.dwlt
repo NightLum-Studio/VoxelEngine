@@ -24,7 +24,7 @@ MonoBehaviour:
   m_MinSize: {x: 300, y: 100}
   m_MaxSize: {x: 24288, y: 16192}
   vertical: 0
-  controlID: 926
+  controlID: 1068
   draggingID: 0
 --- !u!114 &2
 MonoBehaviour:
@@ -150,7 +150,7 @@ MonoBehaviour:
   m_MinSize: {x: 200, y: 100}
   m_MaxSize: {x: 16192, y: 16192}
   vertical: 1
-  controlID: 927
+  controlID: 1069
   draggingID: 0
 --- !u!114 &4
 MonoBehaviour:
@@ -176,7 +176,7 @@ MonoBehaviour:
   m_MinSize: {x: 200, y: 50}
   m_MaxSize: {x: 16192, y: 8096}
   vertical: 0
-  controlID: 928
+  controlID: 1070
   draggingID: 0
 --- !u!114 &5
 MonoBehaviour:
@@ -243,9 +243,9 @@ MonoBehaviour:
   m_SceneHierarchy:
     m_TreeViewState:
       scrollPos: {x: 0, y: 0}
-      m_SelectedIDs: 
+      m_SelectedIDs: 98020000
       m_LastClickedID: 0
-      m_ExpandedIDs: f8faffff
+      m_ExpandedIDs: 5681ffffae82fffff284fffffe8cffff568effff6a90ffff8096ffffd897ffff1c9afffff8faffff
       m_RenameOverlay:
         m_UserAcceptedRename: 0
         m_Name: 
@@ -815,7 +815,7 @@ MonoBehaviour:
   m_Rotation:
     m_Target: {x: 0.07363466, y: 0.8810591, z: -0.14717838, w: 0.44365275}
     speed: 2
-    m_Value: {x: 0.074958295, y: 0.8805359, z: -0.14980786, w: 0.4433908}
+    m_Value: {x: 0.073628165, y: 0.8809814, z: -0.1471654, w: 0.44361362}
   m_Size:
     m_Target: 0.8660254
     speed: 2
@@ -998,7 +998,7 @@ MonoBehaviour:
     m_SkipHidden: 0
     m_SearchArea: 1
     m_Folders:
-    - Assets
+    - Assets/Settings
     m_Globs: []
     m_ProductIds: 
     m_AnyWithAssetOrigin: 0
@@ -1008,16 +1008,16 @@ MonoBehaviour:
   m_ViewMode: 1
   m_StartGridSize: 64
   m_LastFolders:
-  - Assets
+  - Assets/Settings
   m_LastFoldersGridSize: -1
   m_LastProjectPath: C:\Users\block\Documents\Github\Luxelith\HyperPerformantGPURendering
   m_LockTracker:
     m_IsLocked: 0
   m_FolderTreeState:
     scrollPos: {x: 0, y: 98}
-    m_SelectedIDs: faa60000
-    m_LastClickedID: 42746
-    m_ExpandedIDs: 0000000010a5000012a5000014a5000016a5000018a500001aa500001ca5000000ca9a3bffffff7f
+    m_SelectedIDs: 50a70000
+    m_LastClickedID: 42832
+    m_ExpandedIDs: 0000000010a5000012a5000014a5000016a5000018a500001aa500001ca50000faa6000000ca9a3bffffff7f
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -1072,9 +1072,9 @@ MonoBehaviour:
       m_Icon: {fileID: 0}
       m_ResourceFile: 
   m_ListAreaState:
-    m_SelectedInstanceIDs: 
-    m_LastClickedInstanceID: 0
-    m_HadKeyboardFocusLastEvent: 0
+    m_SelectedInstanceIDs: 98020000
+    m_LastClickedInstanceID: 664
+    m_HadKeyboardFocusLastEvent: 1
     m_ExpandedInstanceIDs: c62300000a6d0000a6780000d2550000
     m_RenameOverlay:
       m_UserAcceptedRename: 0

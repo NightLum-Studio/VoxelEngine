@@ -25,6 +25,13 @@ namespace HyperVoxel
         public bool hasJob;
         public bool pendingRemoval;
 
+    // Diagnostics and retry state for GPU meshing/readbacks
+    public float gpuStartTime;       // when counters readback was requested
+    public float uploadStartTime;    // when mesh data readback was requested
+    public int gpuRetryCount;        // retry attempts for counters/mesh data
+    public int pendingVertexCount;   // last requested vertex count for readback
+    public int pendingIndexCount;    // last requested index count for readback
+
         public Chunk(int3 coord)
         {
             this.coord = coord;
