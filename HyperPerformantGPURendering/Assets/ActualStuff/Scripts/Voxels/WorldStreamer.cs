@@ -22,13 +22,6 @@ namespace HyperVoxel
         public ComputeShader voxelMesher;
         public Material voxelMaterial;
     // Atlas tiles per row is now driven by HyperVoxel.BlockDatabase.AtlasTilesPerRow
-    [Min(1)] public int gpuWorkerCount = 2;
-    [Tooltip("Max greedy passes we dispatch per frame across all chunks (6 passes to complete a chunk). Lower to reduce Gfx.WaitForPresent spikes.")]
-    public int maxGreedyPassesPerFrame = 6;
-    [Tooltip("Max simultaneous GPU readbacks (counters + mesh data). Limits in-flight GPU memory/bandwidth.")]
-    public int maxConcurrentReadbacks = 4;
-    [Tooltip("Max chunks to stage for meshing per frame (upload voxels + first pass).")]
-    public int maxStageBeginsPerFrame = 2;
         
     [Header("Runtime")]
     [Tooltip("Continue world streaming/meshing when the window loses focus (alt-tab).")]
@@ -38,17 +31,8 @@ namespace HyperVoxel
         public BlockDatabaseIntegration blockDatabaseIntegration;
 
         private readonly Dictionary<long, Chunk> _chunks = new();
-        private class GpuWorker
-        {
-            public GpuMesher mesher;
-            public Chunk chunk;                // currently staged chunk for greedy passes
-            public bool reservedForReadback;   // true after counters requested until mesh data request issued
-        }
-        private List<GpuWorker> _workers = new List<GpuWorker>();
-        // Staged chunk currently receiving greedy passes on any worker
-        private Chunk _stagedGreedyChunk; // kept for backward diagnostic compatibility (first worker)
-    // Upload/readback pipeline list
-    private readonly List<Chunk> _inFlightReadbacks = new List<Chunk>(32);
+        private GpuMesher _gpuMesher;
+        private Chunk _activeGpuChunk;
 
     // Deterministic load/mesh ordering
     private List<int2> _spiralOffsets = new List<int2>();
@@ -93,33 +77,15 @@ namespace HyperVoxel
                 enabled = false;
                 return;
             }
-            // Create GPU workers pool
-            _workers.Clear();
-            int workerCount = Mathf.Max(1, gpuWorkerCount);
-            for (int i = 0; i < workerCount; i++)
-            {
-                _workers.Add(new GpuWorker { mesher = new GpuMesher(voxelMesher), chunk = null, reservedForReadback = false });
-            }
+            _gpuMesher = new GpuMesher(voxelMesher);
             // Build initial spiral cache
             EnsureSpiralCache(viewDistanceChunks);
             
             // Initialize block database integration
             if (blockDatabaseIntegration != null)
             {
-                if (_workers.Count > 0)
-                {
-                    blockDatabaseIntegration.gpuMesher = _workers[0].mesher;
-                    blockDatabaseIntegration.InitializeBlockData();
-                    // Propagate face texture data to other workers
-                    if (_workers.Count > 1 && blockDatabaseIntegration.blockDatabase != null)
-                    {
-                        var faceData = blockDatabaseIntegration.blockDatabase.GetFaceTextureIndices();
-                        for (int i = 1; i < _workers.Count; i++)
-                        {
-                            _workers[i].mesher.SetFaceTextureData(faceData);
-                        }
-                    }
-                }
+                blockDatabaseIntegration.gpuMesher = _gpuMesher;
+                blockDatabaseIntegration.InitializeBlockData();
             }
             else
             {
@@ -166,10 +132,7 @@ namespace HyperVoxel
             {
                 kv.Value.Dispose();
             }
-            for (int i = 0; i < _workers.Count; i++)
-            {
-                _workers[i].mesher?.Dispose();
-            }
+            _gpuMesher?.Dispose();
         }
 
         private const int KeyBits = 21; // supports coords in [-2^20, 2^20-1]
@@ -329,7 +292,125 @@ namespace HyperVoxel
 
     private void ProcessMeshing()
         {
-            int greedyBudget = Mathf.Max(1, maxGreedyPassesPerFrame);
+            // If there's an active chunk using the shared GPU mesher, drive it to completion first
+            if (_activeGpuChunk != null)
+            {
+                var chunk = _activeGpuChunk;
+                if (chunk.state == ChunkState.MeshingGPU)
+                {
+                    // Timeout or failure handling
+                    if (chunk.countersReq.hasError || (!chunk.countersReq.done && (Time.realtimeSinceStartup - chunk.gpuStartTime) > GpuReadbackTimeout))
+                    {
+                        if (chunk.gpuRetryCount < MaxGpuRetries)
+                        {
+                            // Retry counters request
+                            chunk.gpuRetryCount++;
+                            _gpuMesher.RequestCounters(out chunk.countersReq);
+                            chunk.gpuStartTime = Time.realtimeSinceStartup;
+                        }
+                        else
+                        {
+                            // Give up and mark empty mesh to keep pipeline flowing
+                            ApplyMesh(chunk, System.Array.Empty<GpuMesher.PackedVertex>(), System.Array.Empty<uint>());
+                            chunk.state = ChunkState.Active;
+                            _activeGpuChunk = null;
+                            if (chunk.pendingRemoval)
+                            {
+                                long key = Key(chunk.coord);
+                                if (_chunks.ContainsKey(key)) _chunks.Remove(key);
+                                chunk.Dispose();
+                            }
+                        }
+                        return;
+                    }
+                    if (chunk.countersReq.done && !chunk.countersReq.hasError)
+                    {
+                        var counts = chunk.countersReq.GetData<uint>();
+                        int vCount = (int)counts[0];
+                        int iCount = (int)counts[1];
+                        // Capacity clamp
+                        vCount = Mathf.Min(vCount, GpuMesher.MaxVerticesPerChunk);
+                        iCount = Mathf.Min(iCount, GpuMesher.MaxIndicesPerChunk);
+                        // Clamp to whole quads to avoid partial writes
+                        int quadCount = Mathf.Min(vCount / 4, iCount / 6);
+                        vCount = quadCount * 4;
+                        iCount = quadCount * 6;
+                        // Debug counts once
+                        // Debug.Log($"Chunk {chunk.coord} counts v={vCount} i={iCount}");
+                        if (vCount == 0 || iCount == 0)
+                        {
+                            ApplyMesh(chunk, System.Array.Empty<GpuMesher.PackedVertex>(), System.Array.Empty<uint>());
+                            chunk.state = ChunkState.Active;
+                            _activeGpuChunk = null;
+                        }
+                        else
+                        {
+                            _gpuMesher.RequestMeshData(vCount, iCount, out chunk.vReq, out chunk.iReq);
+                            chunk.pendingVertexCount = vCount;
+                            chunk.pendingIndexCount = iCount;
+                            chunk.uploadStartTime = Time.realtimeSinceStartup;
+                            chunk.state = ChunkState.Uploading;
+                        }
+                    }
+                    return;
+                }
+                if (chunk.state == ChunkState.Uploading)
+                {
+                    // Error or timeout handling for vertex/index readbacks
+                    bool timedOut = (!chunk.vReq.done || !chunk.iReq.done) && (Time.realtimeSinceStartup - chunk.uploadStartTime) > GpuReadbackTimeout;
+                    bool hasError = chunk.vReq.hasError || chunk.iReq.hasError;
+                    if (hasError || timedOut)
+                    {
+                        if (chunk.gpuRetryCount < MaxGpuRetries)
+                        {
+                            chunk.gpuRetryCount++;
+                            // Retry just the mesh data readback without rebuilding
+                            _gpuMesher.RequestMeshData(chunk.pendingVertexCount, chunk.pendingIndexCount, out chunk.vReq, out chunk.iReq);
+                            chunk.uploadStartTime = Time.realtimeSinceStartup;
+                        }
+                        else
+                        {
+                            // Fallback to mark as empty mesh to avoid stalls
+                            ApplyMesh(chunk, System.Array.Empty<GpuMesher.PackedVertex>(), System.Array.Empty<uint>());
+                            chunk.state = ChunkState.Active;
+                            _activeGpuChunk = null;
+                            if (chunk.pendingRemoval)
+                            {
+                                long key = Key(chunk.coord);
+                                if (_chunks.ContainsKey(key)) _chunks.Remove(key);
+                                chunk.Dispose();
+                            }
+                        }
+                        return;
+                    }
+                    if (chunk.vReq.done && chunk.iReq.done && !chunk.vReq.hasError && !chunk.iReq.hasError)
+                    {
+                        if (chunk.mesh == null)
+                        {
+                            // Mesh was destroyed (chunk being removed), skip applying
+                            _activeGpuChunk = null;
+                        }
+                        else
+                        {
+                            // Use native arrays to avoid GC allocations
+                            var vFloats = chunk.vReq.GetData<float>();
+                            var iData = chunk.iReq.GetData<uint>();
+                            ApplyMeshNative(chunk, vFloats, iData);
+                            chunk.state = ChunkState.Active;
+                            _activeGpuChunk = null;
+                        }
+                        if (chunk.pendingRemoval)
+                        {
+                            long key = Key(chunk.coord);
+                            if (_chunks.ContainsKey(key)) _chunks.Remove(key);
+                            chunk.Dispose();
+                        }
+                    }
+                    return;
+                }
+                // If state is anything else, release
+                _activeGpuChunk = null;
+            }
 
             // Update readiness and fill queue
             foreach (var kv in _chunks)
@@ -346,7 +427,7 @@ namespace HyperVoxel
 
             // Optional: detect and log if nothing is progressing for a while (Editor only)
 #if UNITY_EDITOR
-            if (_stagedGreedyChunk == null && _readyQueue.Count == 0)
+            if (_activeGpuChunk == null && _readyQueue.Count == 0)
             {
                 // Check if we have any generating chunks that might be stuck for a long time
                 // Unity jobs rarely hang, but this helps visibility during debugging
@@ -365,194 +446,39 @@ namespace HyperVoxel
 #endif
 
             // No active job; pick the best next chunk (nearest in spiral order) to mesh
-            // 1) Advance staged chunks on workers with available greedy budget (round-robin)
-            for (int wi = 0; wi < _workers.Count && greedyBudget > 0; wi++)
+            if (_readyQueue.Count > 0)
             {
-                var w = _workers[wi];
-                if (w.chunk == null || w.reservedForReadback) continue;
-                while (greedyBudget > 0 && w.chunk.gpuStage < GpuMesher.GreedyStageCount)
-                {
-                    w.mesher.DispatchGreedyStage(w.chunk.gpuStage);
-                    w.chunk.gpuStage++;
-                    greedyBudget--;
-                }
-                if (w.chunk.gpuStage >= GpuMesher.GreedyStageCount)
-                {
-                    // Request counters on the same worker and reserve it until mesh data request
-                    w.mesher.RequestCounters(out w.chunk.countersReq);
-                    w.chunk.gpuStartTime = Time.realtimeSinceStartup;
-                    w.reservedForReadback = true;
-                    _inFlightReadbacks.Add(w.chunk);
-                    if (_stagedGreedyChunk == w.chunk) _stagedGreedyChunk = null;
-                }
-            }
-
-            // 2) Stage new chunks if we have budget and nothing staged
-            int stagedBegins = 0;
-            while (greedyBudget > 0 && stagedBegins < maxStageBeginsPerFrame && _readyQueue.Count > 0)
-            {
-                // Find a free worker (not reserved and with no chunk)
-                int freeWi = -1;
-                for (int wi = 0; wi < _workers.Count; wi++)
-                {
-                    if (_workers[wi].chunk == null && !_workers[wi].reservedForReadback) { freeWi = wi; break; }
-                }
-                if (freeWi < 0) break;
-
-                // Choose best next chunk by spiral priority
-                int bestIdx = -1; int bestPriority = int.MaxValue;
+                int bestIdx = -1;
+                int bestPriority = int.MaxValue;
                 for (int i = 0; i < _readyQueue.Count; i++)
                 {
                     var ch = _readyQueue[i];
                     int dx = ch.coord.x - _currentCenter.x;
                     int dz = ch.coord.z - _currentCenter.z;
                     int pri = GetSpiralPriority(dx, dz);
-                    if (pri < bestPriority) { bestPriority = pri; bestIdx = i; }
-                }
-                if (bestIdx < 0) break;
-                var chunk = _readyQueue[bestIdx];
-                _readyQueue.RemoveAt(bestIdx);
-
-                // Upload voxels and prepare for staged passes
-                var worker = _workers[freeWi];
-                worker.mesher.UploadVoxels(chunk.voxels);
-                Vector3 sunDir = Vector3.down; var sun = RenderSettings.sun; if (sun != null) sunDir = -sun.transform.forward;
-                worker.mesher.PrepareForChunk(chunk.coord, new Unity.Mathematics.float3(sunDir.x, sunDir.y, sunDir.z), 0, 0.75f);
-                chunk.gpuStage = 0; chunk.gpuRetryCount = 0; chunk.meshDataRequested = false; chunk.uploadStartTime = 0f;
-                chunk.state = ChunkState.MeshingGPU;
-                worker.chunk = chunk; worker.reservedForReadback = false; _stagedGreedyChunk ??= chunk; // remember first staged for diagnostics
-                stagedBegins++;
-
-                // Immediately dispatch at least one stage this frame respecting budget
-                if (greedyBudget > 0)
-                {
-                    worker.mesher.DispatchGreedyStage(worker.chunk.gpuStage);
-                    worker.chunk.gpuStage++;
-                    greedyBudget--;
-                }
-
-                // If we still have budget, try to advance more in the same loop iteration
-                while (greedyBudget > 0 && worker.chunk != null && worker.chunk.gpuStage < GpuMesher.GreedyStageCount)
-                {
-                    worker.mesher.DispatchGreedyStage(worker.chunk.gpuStage);
-                    worker.chunk.gpuStage++;
-                    greedyBudget--;
-                }
-                if (worker.chunk != null && worker.chunk.gpuStage >= GpuMesher.GreedyStageCount)
-                {
-                    worker.mesher.RequestCounters(out worker.chunk.countersReq);
-                    worker.chunk.gpuStartTime = Time.realtimeSinceStartup;
-                    worker.reservedForReadback = true;
-                    _inFlightReadbacks.Add(worker.chunk);
-                    if (_stagedGreedyChunk == worker.chunk) _stagedGreedyChunk = null;
-                }
-            }
-
-            // 3) Service in-flight readbacks (counters -> mesh data -> apply mesh)
-            for (int i = _inFlightReadbacks.Count - 1; i >= 0; i--)
-            {
-                var ch = _inFlightReadbacks[i];
-                if (!ch.meshDataRequested)
-                {
-                    // Handle counters readiness/timeouts
-                    bool timeout = !ch.countersReq.done && (Time.realtimeSinceStartup - ch.gpuStartTime) > GpuReadbackTimeout;
-                    if (ch.countersReq.hasError || timeout)
+                    if (pri < bestPriority)
                     {
-                        if (ch.gpuRetryCount < MaxGpuRetries)
-                        {
-                            ch.gpuRetryCount++;
-                            // Use the worker reserved for this chunk to retry counters
-                            var w = FindWorkerForChunk(ch);
-                            if (w != null) w.mesher.RequestCounters(out ch.countersReq);
-                            ch.gpuStartTime = Time.realtimeSinceStartup;
-                            continue;
-                        }
-                        // Give up: empty mesh and finish
-                        ApplyMesh(ch, System.Array.Empty<GpuMesher.PackedVertex>(), System.Array.Empty<uint>());
-                        ch.state = ChunkState.Active;
-                        _inFlightReadbacks.RemoveAt(i);
-                        ReleaseWorkerForChunk(ch);
-                        if (ch.pendingRemoval) { long key = Key(ch.coord); if (_chunks.ContainsKey(key)) _chunks.Remove(key); ch.Dispose(); }
-                        continue;
-                    }
-                    if (ch.countersReq.done && !ch.countersReq.hasError)
-                    {
-                        var counts = ch.countersReq.GetData<uint>();
-                        int vCount = (int)counts[0];
-                        int iCount = (int)counts[1];
-                        vCount = Mathf.Min(vCount, GpuMesher.MaxVerticesPerChunk);
-                        iCount = Mathf.Min(iCount, GpuMesher.MaxIndicesPerChunk);
-                        int quadCount = Mathf.Min(vCount / 4, iCount / 6);
-                        vCount = quadCount * 4;
-                        iCount = quadCount * 6;
-                        if (vCount == 0 || iCount == 0)
-                        {
-                            ApplyMesh(ch, System.Array.Empty<GpuMesher.PackedVertex>(), System.Array.Empty<uint>());
-                            ch.state = ChunkState.Active;
-                            _inFlightReadbacks.RemoveAt(i);
-                            ReleaseWorkerForChunk(ch);
-                            if (ch.pendingRemoval) { long key = Key(ch.coord); if (_chunks.ContainsKey(key)) _chunks.Remove(key); ch.Dispose(); }
-                            continue;
-                        }
-                        // Throttle number of simultaneous mesh data readbacks (bounded by worker count)
-                        int activeMeshReads = 0; for (int j = 0; j < _inFlightReadbacks.Count; j++) if (_inFlightReadbacks[j].meshDataRequested && _inFlightReadbacks[j].state == ChunkState.Uploading) activeMeshReads++;
-                        int maxReads = Mathf.Min(maxConcurrentReadbacks, _workers.Count);
-                        if (activeMeshReads >= maxReads)
-                        {
-                            // Defer to next frame to avoid overloading
-                            continue;
-                        }
-                        // Use the reserved worker to request mesh data (snapshot of its buffers)
-                        var w = FindWorkerForChunk(ch);
-                        if (w != null)
-                        {
-                            w.mesher.RequestMeshData(vCount, iCount, out ch.vReq, out ch.iReq);
-                            // Keep worker reserved until mesh data readbacks complete
-                        }
-                        ch.pendingVertexCount = vCount; ch.pendingIndexCount = iCount;
-                        ch.uploadStartTime = Time.realtimeSinceStartup;
-                        ch.meshDataRequested = true;
-                        ch.state = ChunkState.Uploading;
+                        bestPriority = pri;
+                        bestIdx = i;
                     }
                 }
-                else
+                if (bestIdx >= 0)
                 {
-                    bool timedOut = (!ch.vReq.done || !ch.iReq.done) && (Time.realtimeSinceStartup - ch.uploadStartTime) > GpuReadbackTimeout;
-                    bool hasError = ch.vReq.hasError || ch.iReq.hasError;
-                    if (hasError || timedOut)
-                    {
-                        if (ch.gpuRetryCount < MaxGpuRetries)
-                        {
-                            ch.gpuRetryCount++;
-                            // Retry mesh data readback on the same worker that holds the buffers
-                            var w = FindWorkerForChunk(ch);
-                            if (w != null)
-                            {
-                                w.mesher.RequestMeshData(ch.pendingVertexCount, ch.pendingIndexCount, out ch.vReq, out ch.iReq);
-                            }
-                            ch.uploadStartTime = Time.realtimeSinceStartup;
-                            continue;
-                        }
-                        ApplyMesh(ch, System.Array.Empty<GpuMesher.PackedVertex>(), System.Array.Empty<uint>());
-                        ch.state = ChunkState.Active;
-                        _inFlightReadbacks.RemoveAt(i);
-                        ReleaseWorkerForChunk(ch);
-                        if (ch.pendingRemoval) { long key = Key(ch.coord); if (_chunks.ContainsKey(key)) _chunks.Remove(key); ch.Dispose(); }
-                        continue;
-                    }
-                    if (ch.vReq.done && ch.iReq.done && !ch.vReq.hasError && !ch.iReq.hasError)
-                    {
-                        if (ch.mesh != null)
-                        {
-                            var vFloats = ch.vReq.GetData<float>();
-                            var iData = ch.iReq.GetData<uint>();
-                            ApplyMeshNative(ch, vFloats, iData);
-                            ch.state = ChunkState.Active;
-                        }
-                        _inFlightReadbacks.RemoveAt(i);
-                        ReleaseWorkerForChunk(ch);
-                        if (ch.pendingRemoval) { long key = Key(ch.coord); if (_chunks.ContainsKey(key)) _chunks.Remove(key); ch.Dispose(); }
-                    }
+                    var chunk = _readyQueue[bestIdx];
+                    _readyQueue.RemoveAt(bestIdx);
+
+                    _gpuMesher.UploadVoxels(chunk.voxels);
+                    // Provide sun direction hint; if directional light exists use it, else default
+                    Vector3 sunDir = Vector3.down;
+                    var sun = RenderSettings.sun;
+                    if (sun != null) sunDir = -sun.transform.forward;
+                    _gpuMesher.BuildMesh(chunk.coord, new Unity.Mathematics.float3(sunDir.x, sunDir.y, sunDir.z), 0, 0.75f);
+                    _gpuMesher.RequestCounters(out chunk.countersReq);
+                    chunk.gpuStartTime = Time.realtimeSinceStartup;
+                    chunk.uploadStartTime = 0f;
+                    chunk.gpuRetryCount = 0;
+                    chunk.state = ChunkState.MeshingGPU;
+                    _activeGpuChunk = chunk;
                 }
             }
         }
@@ -737,31 +663,7 @@ namespace HyperVoxel
         }
 
         public int GetReadyQueueLength() => _readyQueue.Count;
-        public bool HasActiveGpuChunk => _stagedGreedyChunk != null || _inFlightReadbacks.Count > 0;
-
-        // --- Worker helpers ---
-        private GpuWorker FindWorkerForChunk(Chunk ch)
-        {
-            for (int i = 0; i < _workers.Count; i++)
-            {
-                if (_workers[i].chunk == ch) return _workers[i];
-            }
-            return null;
-        }
-
-        private void ReleaseWorkerForChunk(Chunk ch)
-        {
-            for (int i = 0; i < _workers.Count; i++)
-            {
-                if (_workers[i].chunk == ch)
-                {
-                    _workers[i].chunk = null;
-                    _workers[i].reservedForReadback = false;
-                    if (_stagedGreedyChunk == ch) _stagedGreedyChunk = null;
-                    return;
-                }
-            }
-        }
+        public bool HasActiveGpuChunk => _activeGpuChunk != null;
         public int3 GetCurrentCenter() => _currentCenter;
     }
 }

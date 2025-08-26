@@ -21,8 +21,8 @@ namespace HyperVoxel
     private Unity.Collections.NativeArray<uint> _voxelUintTemp;
     private static readonly uint[] s_CounterZeros = new uint[] { 0u, 0u };
 
-    private int kernelBuildFaces;
-    private int kGreedyPosY, kGreedyNegY, kGreedyPosX, kGreedyNegX, kGreedyPosZ, kGreedyNegZ;
+        private int kernelBuildFaces;
+        private int kGreedyPosY, kGreedyNegY, kGreedyPosX, kGreedyNegX, kGreedyPosZ, kGreedyNegZ;
     private int[] _kernels;
     private readonly int[] _chunkCoordInts = new int[3];
     private readonly float[] _sunDirFloats = new float[3];
@@ -39,18 +39,6 @@ namespace HyperVoxel
             public float ao;
             public float shadow;
             public float4 tangent;
-        }
-
-        // Time-slicing greedy meshing stages
-        public const int GreedyStageCount = 6;
-        public enum GreedyStage : int
-        {
-            PosY = 0,
-            NegY = 1,
-            PosX = 2,
-            NegX = 3,
-            PosZ = 4,
-            NegZ = 5,
         }
 
         public GpuMesher(ComputeShader cs)
@@ -153,63 +141,6 @@ namespace HyperVoxel
             shader.Dispatch(kGreedyNegX, ChunkDefs.ChunkSizeXZ, 1, 1);
             shader.Dispatch(kGreedyPosZ, ChunkDefs.ChunkSizeXZ, 1, 1);
             shader.Dispatch(kGreedyNegZ, ChunkDefs.ChunkSizeXZ, 1, 1);
-        }
-
-        // Prepare compute shader and buffers for a specific chunk; used for staged/pooled meshing
-        public void PrepareForChunk(int3 chunkCoord, float3 sunDir, int sunShadowSteps, float sunShadowStepLen)
-        {
-            _chunkCoordInts[0] = chunkCoord.x; _chunkCoordInts[1] = chunkCoord.y; _chunkCoordInts[2] = chunkCoord.z;
-            shader.SetInts("_ChunkCoord", _chunkCoordInts);
-            shader.SetInt("_ChunkSizeXZ", ChunkDefs.ChunkSizeXZ);
-            shader.SetInt("_ChunkSizeY", ChunkDefs.ChunkSizeY);
-            shader.SetInt("_AtlasTilesPerRow", HyperVoxel.BlockDatabase.AtlasTilesPerRow);
-            _sunDirFloats[0] = sunDir.x; _sunDirFloats[1] = sunDir.y; _sunDirFloats[2] = sunDir.z;
-            shader.SetFloats("_SunDir", _sunDirFloats);
-            shader.SetInt("_SunShadowSteps", sunShadowSteps);
-            shader.SetFloat("_SunShadowStepLen", sunShadowStepLen);
-
-            // Bind buffers for all kernels used
-            for (int i = 0; i < _kernels.Length; i++)
-            {
-                int k = _kernels[i];
-                shader.SetBuffer(k, "_Voxels", voxelBuffer);
-                shader.SetBuffer(k, "_Counters", countersBuffer);
-                shader.SetBuffer(k, "_Vertices", vertexBuffer);
-                shader.SetBuffer(k, "_Indices", indexBuffer);
-                shader.SetBuffer(k, "_BlockUvTriplets", blockUvTriplets);
-                shader.SetBuffer(k, "_BlockFaceTextures", faceTextureBuffer);
-            }
-
-            // Reset counters at the start of a chunk
-            countersBuffer.SetData(s_CounterZeros);
-        }
-
-        // Dispatch a single greedy stage for time-sliced meshing
-        public void DispatchGreedyStage(int stage)
-        {
-            switch ((GreedyStage)stage)
-            {
-                case GreedyStage.PosY:
-                    shader.Dispatch(kGreedyPosY, ChunkDefs.ChunkSizeY, 1, 1);
-                    break;
-                case GreedyStage.NegY:
-                    shader.Dispatch(kGreedyNegY, ChunkDefs.ChunkSizeY, 1, 1);
-                    break;
-                case GreedyStage.PosX:
-                    shader.Dispatch(kGreedyPosX, ChunkDefs.ChunkSizeXZ, 1, 1);
-                    break;
-                case GreedyStage.NegX:
-                    shader.Dispatch(kGreedyNegX, ChunkDefs.ChunkSizeXZ, 1, 1);
-                    break;
-                case GreedyStage.PosZ:
-                    shader.Dispatch(kGreedyPosZ, ChunkDefs.ChunkSizeXZ, 1, 1);
-                    break;
-                case GreedyStage.NegZ:
-                    shader.Dispatch(kGreedyNegZ, ChunkDefs.ChunkSizeXZ, 1, 1);
-                    break;
-                default:
-                    break;
-            }
         }
 
         public void ReadbackMesh(AsyncGPUReadbackRequest verticesReq, AsyncGPUReadbackRequest indicesReq,
