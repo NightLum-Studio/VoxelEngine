@@ -4,7 +4,7 @@
 </p>
 <h1 align="center">Luxelith – Hyper‑Performant GPU Voxel Rendering (Unity)</h1>
 
-Luxelith is a Unity project showcasing a hyper‑performant voxel world renderer powered by Compute Shaders and greedy meshing on the GPU. It streams chunks around the player, generates terrain with Burst/Jobs, and builds meshes via a shared GPU mesher with async readback.
+Luxelith is a Unity project showcasing a hyper‑performant voxel world renderer powered by Compute Shaders and greedy meshing on the GPU. It streams chunks around the player, generates terrain with Burst/Jobs, and builds meshes via a shared GPU mesher with async readback. The goal of this project was to create a Unity voxel engine that does not use GameObject based chunks and CPU bound mesh generation like most tutorials on the internet, but rather calculating as much as possible using compute shaders, as well as using multithreading to make the best possible voxel engine I could in Unity for my own projects. I wanted to share this code so anybody would be able to use this as a basis for their own Voxel Projects in Unity.
 
 Key modules
 - GPU meshing (compute + greedy) with per‑face textures
