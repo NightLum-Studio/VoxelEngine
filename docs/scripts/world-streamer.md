@@ -36,4 +36,12 @@ Usage
 Related
 - [GpuMesher](gpu-mesher.md), [Chunk](chunk.md), [ChunkDefs](chunk-defs.md), [TerrainGeneration](terrain-generation.md)
 
+---
+
+Visual showcase
+
+<p align="center">
+	<img src="../images/World%20Stream.gif" alt="World Stream GIF">
+</p>
+
 [Back to overview](../overview.md)
