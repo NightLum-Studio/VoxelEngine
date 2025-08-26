@@ -23,10 +23,11 @@ For detailed documentation, see the docs folder:
 - In a scene, add:
   - WorldStreamer (assign ComputeShader/Material or let it auto‑load from Resources)
   - BlockDatabaseIntegration (assign a `BlockDefinitionDatabase` asset)
-  - VoxelEngineSetupValidator (optional: Validate/Auto‑setup)
-  - PlayerFlyController on the Camera rig
+  - PlayerFlyController on the Camera rig and assign it to the Player field in the World Streamer
 - Create/assign `Assets/BlockDefinitionDatabase.asset` with a Texture2DArray atlas; open Tools > Voxel Engine > Block Editor to author per‑face indices.
 - Play. The world streams around the player in a deterministic spiral.
+
+You can also use the already pre-setup default scene.
 
 ## Features
 

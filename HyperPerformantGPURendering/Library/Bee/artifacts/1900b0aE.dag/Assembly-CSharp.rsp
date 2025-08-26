@@ -437,7 +437,6 @@
 "Assets/ActualStuff/Scripts/Voxels/ChunkDefs.cs"
 "Assets/ActualStuff/Scripts/Voxels/GpuMesher.cs"
 "Assets/ActualStuff/Scripts/Voxels/TerrainGeneration.cs"
-"Assets/ActualStuff/Scripts/Voxels/VoxelEngineSetupValidator.cs"
 "Assets/ActualStuff/Scripts/Voxels/WorldStreamer.cs"
 -langversion:9.0
 /unsafe+

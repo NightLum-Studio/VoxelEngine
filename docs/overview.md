@@ -29,7 +29,6 @@ Per-script reference information
 - [BlockDatabaseIntegration](scripts/block-database-integration.md)
 - [BlockDatabase](scripts/block-database.md)
 - [BlockTypes](scripts/block-types.md)
-- [VoxelEngineSetupValidator](scripts/voxel-engine-setup-validator.md)
 - [BuildDiagnostic](scripts/build-diagnostic.md)
 - [PlayerFlyController](scripts/player-fly-controller.md)
 - [BlockEditor](scripts/block-editor.md)
