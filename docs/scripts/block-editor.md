@@ -2,6 +2,11 @@
 
 Location: `Assets/ActualStuff/EditorStuff/Editor/BlockEditor.cs`
 
+
+This tool is essentially a block editor, allowing oyu to easity change block textures on the fly using a visual interface!
+
+![Block Editor Preview](../images/BlockEditorPreview.png)
+
 Summary
 - EditorWindow (Tools > Voxel Engine > Block Editor) for per-face texture editing
 - 3D preview with six quads; extracts Texture2D slices (fallback colored tiles)
@@ -13,7 +18,7 @@ Inspector/Window UI
 - Properties: name, BlockId, per-face indices, gameplay (tool, hardness, flags), physics, audio
 - Actions: Save Changes, Revert
 - Preview: rotation/zoom controls; material wireframe/double-sided toggles
-- Test: extract textures, use fallback textures, preset face indices
+
 
 Related
 - [BlockDefinition](block-definition.md), [BlockDefinitionDatabase](block-definition-database.md)
