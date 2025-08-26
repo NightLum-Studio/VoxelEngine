@@ -41,7 +41,7 @@ Related
 Visual showcase
 
 <p align="center">
-	<img src="../images/World%20Stream.gif" alt="World Stream GIF">
+	<img src="../images/World%20Stream%20Gif.gif" alt="World Stream GIF">
 </p>
 
 [Back to overview](../overview.md)
