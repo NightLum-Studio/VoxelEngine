@@ -56,6 +56,12 @@ namespace HyperVoxel.Editor
             _previewRenderUtility.camera.transform.rotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
             _previewRenderUtility.camera.nearClipPlane = 0.3f;
             _previewRenderUtility.camera.farClipPlane = 1000f;
+            // Ensure crisp preview without MSAA smoothing
+            _previewRenderUtility.camera.allowMSAA = false;
+            // Reduce SRP complexity in preview
+            _previewRenderUtility.camera.useOcclusionCulling = false;
+            _previewRenderUtility.camera.clearFlags = CameraClearFlags.Color;
+            _previewRenderUtility.camera.backgroundColor = new Color(0.2f, 0.2f, 0.2f, 1f);
 
             // Create parent object for organization
             _previewCube = new GameObject("PreviewCube");
@@ -515,7 +521,7 @@ namespace HyperVoxel.Editor
             try
             {
                 // Method 1: Try using Graphics.CopyTexture with RenderTexture
-                var tempRT = RenderTexture.GetTemporary(textureArray.width, textureArray.height, 0, RenderTextureFormat.ARGB32);
+        var tempRT = RenderTexture.GetTemporary(textureArray.width, textureArray.height, 0, RenderTextureFormat.ARGB32);
                 
                 if (tempRT != null)
                 {
@@ -523,13 +529,17 @@ namespace HyperVoxel.Editor
                     {
                         Graphics.CopyTexture(textureArray, sliceIndex, tempRT, 0);
                         
-                        var texture2D = new Texture2D(textureArray.width, textureArray.height, TextureFormat.RGBA32, false);
+            var texture2D = new Texture2D(textureArray.width, textureArray.height, TextureFormat.RGBA32, false);
                         texture2D.hideFlags = HideFlags.HideAndDontSave;
                         texture2D.name = $"ExtractedTexture_Slice{sliceIndex}";
+            // Make pixel art crisp in preview
+            texture2D.filterMode = FilterMode.Point;
+            texture2D.wrapMode = TextureWrapMode.Clamp;
+            texture2D.anisoLevel = 0;
                         
                         RenderTexture.active = tempRT;
-                        texture2D.ReadPixels(new Rect(0, 0, textureArray.width, textureArray.height), 0, 0);
-                        texture2D.Apply();
+            texture2D.ReadPixels(new Rect(0, 0, textureArray.width, textureArray.height), 0, 0);
+            texture2D.Apply(false, false);
                         RenderTexture.active = null;
                         
                         RenderTexture.ReleaseTemporary(tempRT);
@@ -580,6 +590,10 @@ namespace HyperVoxel.Editor
             var texture = new Texture2D(width, height, TextureFormat.RGBA32, false);
             texture.hideFlags = HideFlags.HideAndDontSave;
             texture.name = $"FallbackTexture_Slice{sliceIndex}";
+            // Make pixel art crisp in preview
+            texture.filterMode = FilterMode.Point;
+            texture.wrapMode = TextureWrapMode.Clamp;
+            texture.anisoLevel = 0;
             
             // Create a unique pattern for each slice
             var colors = new Color[width * height];
@@ -606,7 +620,7 @@ namespace HyperVoxel.Editor
             }
             
             texture.SetPixels(colors);
-            texture.Apply();
+            texture.Apply(false, false);
             
             return texture;
         }
@@ -717,8 +731,7 @@ namespace HyperVoxel.Editor
         private void DrawBlockProperties()
         {
             EditorGUILayout.LabelField("Block Properties", EditorStyles.boldLabel);
-
-            EditorGUI.BeginChangeCheck();
+            bool faceChanged = false;
 
             // Basic properties
             _editingBlock.blockName = EditorGUILayout.TextField("Name", _editingBlock.blockName);
@@ -731,22 +744,46 @@ namespace HyperVoxel.Editor
             
             // Use color boxes to help visualize faces
             GUI.color = new Color(0.8f, 1f, 0.8f); // Light green for top
-            _editingBlock.faceTextures.topFace = EditorGUILayout.IntField("Top Face (↑)", _editingBlock.faceTextures.topFace);
+            {
+                EditorGUI.BeginChangeCheck();
+                int v = EditorGUILayout.IntField("Top Face (↑)", _editingBlock.faceTextures.topFace);
+                if (EditorGUI.EndChangeCheck()) { _editingBlock.faceTextures.topFace = v; faceChanged = true; }
+            }
             
             GUI.color = new Color(0.8f, 0.8f, 1f); // Light blue for bottom
-            _editingBlock.faceTextures.bottomFace = EditorGUILayout.IntField("Bottom Face (↓)", _editingBlock.faceTextures.bottomFace);
+            {
+                EditorGUI.BeginChangeCheck();
+                int v = EditorGUILayout.IntField("Bottom Face (↓)", _editingBlock.faceTextures.bottomFace);
+                if (EditorGUI.EndChangeCheck()) { _editingBlock.faceTextures.bottomFace = v; faceChanged = true; }
+            }
             
             GUI.color = new Color(1f, 0.9f, 0.8f); // Light orange for north
-            _editingBlock.faceTextures.northFace = EditorGUILayout.IntField("North Face (+Z)", _editingBlock.faceTextures.northFace);
+            {
+                EditorGUI.BeginChangeCheck();
+                int v = EditorGUILayout.IntField("North Face (+Z)", _editingBlock.faceTextures.northFace);
+                if (EditorGUI.EndChangeCheck()) { _editingBlock.faceTextures.northFace = v; faceChanged = true; }
+            }
             
             GUI.color = new Color(1f, 0.8f, 0.9f); // Light pink for south
-            _editingBlock.faceTextures.southFace = EditorGUILayout.IntField("South Face (-Z)", _editingBlock.faceTextures.southFace);
+            {
+                EditorGUI.BeginChangeCheck();
+                int v = EditorGUILayout.IntField("South Face (-Z)", _editingBlock.faceTextures.southFace);
+                if (EditorGUI.EndChangeCheck()) { _editingBlock.faceTextures.southFace = v; faceChanged = true; }
+            }
             
             GUI.color = new Color(0.9f, 1f, 0.8f); // Light yellow-green for east
-            _editingBlock.faceTextures.eastFace = EditorGUILayout.IntField("East Face (+X)", _editingBlock.faceTextures.eastFace);
+            {
+                EditorGUI.BeginChangeCheck();
+                int v = EditorGUILayout.IntField("East Face (+X)", _editingBlock.faceTextures.eastFace);
+                if (EditorGUI.EndChangeCheck()) { _editingBlock.faceTextures.eastFace = v; faceChanged = true; }
+            }
             
             GUI.color = new Color(0.9f, 0.8f, 1f); // Light purple for west
-            _editingBlock.faceTextures.westFace = EditorGUILayout.IntField("West Face (-X)", _editingBlock.faceTextures.westFace);
+            {
+                EditorGUI.BeginChangeCheck();
+                int v = EditorGUILayout.IntField("West Face (-X)", _editingBlock.faceTextures.westFace);
+                if (EditorGUI.EndChangeCheck()) { _editingBlock.faceTextures.westFace = v; faceChanged = true; }
+            }
             
             GUI.color = Color.white; // Reset color
 
@@ -755,6 +792,7 @@ namespace HyperVoxel.Editor
             {
                 int value = _editingBlock.faceTextures.topFace;
                 _editingBlock.SetAllFaces(value);
+                faceChanged = true;
             }
             if (GUILayout.Button("Copy Top to Sides"))
             {
@@ -763,6 +801,7 @@ namespace HyperVoxel.Editor
                 _editingBlock.faceTextures.southFace = topValue;
                 _editingBlock.faceTextures.eastFace = topValue;
                 _editingBlock.faceTextures.westFace = topValue;
+                faceChanged = true;
             }
             EditorGUILayout.EndHorizontal();
             
@@ -773,10 +812,12 @@ namespace HyperVoxel.Editor
                 _editingBlock.faceTextures.southFace = sideValue;
                 _editingBlock.faceTextures.eastFace = sideValue;
                 _editingBlock.faceTextures.westFace = sideValue;
+                faceChanged = true;
             }
             if (GUILayout.Button("Reset to 0"))
             {
                 _editingBlock.SetAllFaces(0);
+                faceChanged = true;
             }
             EditorGUILayout.EndHorizontal();
 
@@ -801,9 +842,10 @@ namespace HyperVoxel.Editor
                 _editingBlock.stepSoundName = EditorGUILayout.TextField("Step Sound", _editingBlock.stepSoundName);
             }
 
-            if (EditorGUI.EndChangeCheck())
+            if (faceChanged)
             {
                 UpdatePreviewMaterial();
+                Repaint();
             }
 
             EditorGUILayout.Space();
@@ -897,66 +939,9 @@ namespace HyperVoxel.Editor
                     EditorGUILayout.HelpBox("No texture array assigned! Please assign one in the Block Definition Database.", MessageType.Warning);
                 }
                 
-                // Test buttons
+                // Preview mode buttons
                 EditorGUILayout.Space();
-                EditorGUILayout.LabelField("Test Functions:", EditorStyles.boldLabel);
-                EditorGUILayout.BeginHorizontal();
-                if (GUILayout.Button("Test Different Faces"))
-                {
-                    // Set different texture indices to test each face
-                    if (_editingBlock != null)
-                    {
-                        int maxIndex = 5; // Default fallback
-                        try
-                        {
-                            if (_database?.textureArray != null)
-                            {
-                                maxIndex = _database.textureArray.depth - 1;
-                            }
-                        }
-                        catch (System.Exception)
-                        {
-                            maxIndex = 5; // Safe fallback
-                        }
-                        
-                        _editingBlock.faceTextures.topFace = Mathf.Min(0, maxIndex);
-                        _editingBlock.faceTextures.bottomFace = Mathf.Min(1, maxIndex);
-                        _editingBlock.faceTextures.northFace = Mathf.Min(2, maxIndex);
-                        _editingBlock.faceTextures.southFace = Mathf.Min(3, maxIndex);
-                        _editingBlock.faceTextures.eastFace = Mathf.Min(4, maxIndex);
-                        _editingBlock.faceTextures.westFace = Mathf.Min(5, maxIndex);
-                        UpdatePreviewMaterial();
-                        Repaint();
-                    }
-                }
-                if (GUILayout.Button("Reset to 0"))
-                {
-                    if (_editingBlock != null)
-                    {
-                        _editingBlock.SetAllFaces(0);
-                        UpdatePreviewMaterial();
-                        Repaint();
-                    }
-                }
-                EditorGUILayout.EndHorizontal();
-                
-                if (GUILayout.Button("Force Material Update"))
-                {
-                    UpdatePreviewMaterial();
-                    Repaint();
-                }
-                
-                EditorGUILayout.BeginHorizontal();
-                if (GUILayout.Button("Test Texture Extraction"))
-                {
-                    TestTextureExtraction();
-                }
-                if (GUILayout.Button("Use Fallback Textures"))
-                {
-                    UseFallbackTextures();
-                }
-                EditorGUILayout.EndHorizontal();
-                
+                EditorGUILayout.LabelField("Preview Mode:", EditorStyles.boldLabel);
                 EditorGUILayout.BeginHorizontal();
                 if (GUILayout.Button("Show Wireframe"))
                 {
@@ -966,19 +951,6 @@ namespace HyperVoxel.Editor
                 if (GUILayout.Button("Show Solid"))
                 {
                     SetWireframeMode(false);
-                    Repaint();
-                }
-                EditorGUILayout.EndHorizontal();
-                
-                EditorGUILayout.BeginHorizontal();
-                if (GUILayout.Button("Show Double-Sided"))
-                {
-                    SetDoubleSided(true);
-                    Repaint();
-                }
-                if (GUILayout.Button("Show Single-Sided"))
-                {
-                    SetDoubleSided(false);
                     Repaint();
                 }
                 EditorGUILayout.EndHorizontal();
@@ -1030,6 +1002,12 @@ namespace HyperVoxel.Editor
         {
             if (_previewCube == null || _faceMeshes == null) return;
 
+            // Only render during repaint to avoid SRP job contention and invalid culling results
+            if (Event.current.type != EventType.Repaint) return;
+
+            // Skip if rect is too small or zero-sized (can happen during layout/scroll)
+            if (previewRect.width < 2 || previewRect.height < 2) return;
+
             // Set camera position and rotation
             float distance = _previewZoom;
             _previewRenderUtility.camera.transform.position = Quaternion.Euler(-_previewDir.y, -_previewDir.x, 0) * Vector3.forward * distance;
@@ -1063,7 +1041,10 @@ namespace HyperVoxel.Editor
             _previewRenderUtility.camera.Render();
             
             Texture resultTexture = _previewRenderUtility.EndPreview();
-            GUI.DrawTexture(previewRect, resultTexture, ScaleMode.StretchToFill, false);
+            if (resultTexture != null)
+            {
+                GUI.DrawTexture(previewRect, resultTexture, ScaleMode.StretchToFill, false);
+            }
         }
 
         private void AddNewBlock()
