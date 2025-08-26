@@ -3,7 +3,7 @@
 Location: `Assets/ActualStuff/EditorStuff/Editor/BlockEditor.cs`
 
 
-This tool is essentially a block editor, allowing oyu to easity change block textures on the fly using a visual interface!
+This tool is a block editor, allowing you to easity change block textures on the fly using a visual interface!
 
 ![Block Editor Preview](../images/BlockEditorPreview.png)
 
