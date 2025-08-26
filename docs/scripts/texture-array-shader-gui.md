@@ -18,4 +18,4 @@ Properties handled
 Related
 - [BlockEditor](block-editor.md)
 
-Back to overview: ../overview.md
+[Back to overview](../overview.md)

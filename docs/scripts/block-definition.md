@@ -31,4 +31,4 @@ Key APIs
 Related
 - [BlockDefinitionDatabase](block-definition-database.md), [BlockEditor](block-editor.md)
 
-Back to overview: ../overview.md
+[Back to overview](../overview.md)

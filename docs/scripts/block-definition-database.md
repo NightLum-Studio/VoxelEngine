@@ -25,4 +25,4 @@ Key APIs
 Related
 - [BlockDefinition](block-definition.md), [BlockDatabaseIntegration](block-database-integration.md), [BlockEditor](block-editor.md)
 
-Back to overview: ../overview.md
+[Back to overview](../overview.md)

@@ -19,20 +19,20 @@ Start here for a high-level map of Luxelith’s voxel engine and links to per-sc
   - PlayerFlyController free-fly controller for testing
 
 Per-script reference information
-- scripts/world-streamer.md
-- scripts/gpu-mesher.md
-- scripts/chunk.md
-- scripts/chunk-defs.md
-- scripts/terrain-generation.md
-- scripts/block-definition.md
-- scripts/block-definition-database.md
-- scripts/block-database-integration.md
-- scripts/block-database.md
-- scripts/block-types.md
-- scripts/voxel-engine-setup-validator.md
-- scripts/build-diagnostic.md
-- scripts/player-fly-controller.md
-- scripts/block-editor.md
-- scripts/texture-array-shader-gui.md
+- [WorldStreamer](scripts/world-streamer.md)
+- [GpuMesher](scripts/gpu-mesher.md)
+- [Chunk](scripts/chunk.md)
+- [ChunkDefs](scripts/chunk-defs.md)
+- [TerrainGeneration](scripts/terrain-generation.md)
+- [BlockDefinition](scripts/block-definition.md)
+- [BlockDefinitionDatabase](scripts/block-definition-database.md)
+- [BlockDatabaseIntegration](scripts/block-database-integration.md)
+- [BlockDatabase](scripts/block-database.md)
+- [BlockTypes](scripts/block-types.md)
+- [VoxelEngineSetupValidator](scripts/voxel-engine-setup-validator.md)
+- [BuildDiagnostic](scripts/build-diagnostic.md)
+- [PlayerFlyController](scripts/player-fly-controller.md)
+- [BlockEditor](scripts/block-editor.md)
+- [TextureArrayShaderGUI](scripts/texture-array-shader-gui.md)
 
-Back to README: [README.md]../README.md
+[Back to README](../README.md)

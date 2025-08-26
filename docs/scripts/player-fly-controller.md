@@ -16,4 +16,4 @@ Controls
 - Look: Mouse; Move: WASD; Ascend/Descend: Space/Ctrl (by default)
 - Speed mods: Shift (fast), Alt (slow)
 
-Back to overview: ../overview.md
+[Back to overview](../overview.md)
