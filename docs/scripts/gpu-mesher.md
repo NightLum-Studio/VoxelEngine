@@ -36,4 +36,12 @@ Key APIs
 Related
 - [WorldStreamer](world-streamer.md), [BlockDatabaseIntegration](block-database-integration.md), [BlockTypes](block-types.md)
 
+---
+
+Visual showcase
+
+<p align="center">
+	<img src="../images/Greedy%20Mesher%20Example.png" alt="Greedy Mesher Example">
+</p>
+
 [Back to overview](../overview.md)

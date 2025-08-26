@@ -1,4 +1,8 @@
-# Luxelith – Hyper‑Performant GPU Voxel Rendering (Unity)
+<p align="center">
+  <img src="docs/images/Logo.png" alt="Luxelith Logo" width="256">
+  
+</p>
+<h1 align="center">Luxelith – Hyper‑Performant GPU Voxel Rendering (Unity)</h1>
 
 Luxelith is a Unity project showcasing a hyper‑performant voxel world renderer powered by Compute Shaders and greedy meshing on the GPU. It streams chunks around the player, generates terrain with Burst/Jobs, and builds meshes via a shared GPU mesher with async readback.
 
@@ -32,6 +36,12 @@ For detailed documentation, see the docs folder:
 - Burst IJob terrain generation (FBM sample included)
 - Editor Block Editor with live per‑face preview from Texture2DArray
 - Build diagnostics overlay (FPS, frame time, memory, compute support)
+
+## Showcase
+
+<p align="center">
+  <img src="docs/images/Enviorment%20Showcase.png" alt="Environment Showcase">
+</p>
 
 ## Project layout
 
