@@ -1,4 +1,4 @@
-<h1 align="center">VoxelEngine – </h1>
+<h1 align="center">VoxelEngine</h1>
 
 A lightweight voxel engine library for Unity.
 
